@@ -28,17 +28,17 @@ function generateId(): string {
 }
 
 function filterByGenre(movies: Movie[], genre: string): Movie[] {
-  if (genre === 'all') return movies;
+  if (genre === 'all') return movies.slice();
   return movies.filter((m) => m.genre === genre);
 }
 
 function filterByStatus(movies: Movie[], status: 'all' | MovieStatus): Movie[] {
-  if (status === 'all') return movies;
+  if (status === 'all') return movies.slice();
   return movies.filter((m) => m.status === status);
 }
 
 function filterByYear(movies: Movie[], yearFrom: number | '', yearTo: number | ''): Movie[] {
-  let result = movies;
+  let result = movies.slice();
   if (yearFrom !== '') {
     const from = Number(yearFrom);
     result = result.filter((m) => m.year >= from);
@@ -51,7 +51,7 @@ function filterByYear(movies: Movie[], yearFrom: number | '', yearTo: number | '
 }
 
 function sortMovies(movies: Movie[], sortKey: SortKey): Movie[] {
-  const result = [...movies];
+  const result = movies.slice();
   switch (sortKey) {
     case 'rating-desc':
       return result.sort((a, b) => b.rating - a.rating);
@@ -74,19 +74,32 @@ function sortMovies(movies: Movie[], sortKey: SortKey): Movie[] {
 
 function pipeMovies(
   movies: Movie[],
-  filter: MovieFilterState
+  genre: string,
+  status: 'all' | MovieStatus,
+  yearFrom: number | '',
+  yearTo: number | '',
+  sort: SortKey
 ): Movie[] {
-  let result = filterByGenre(movies, filter.genre);
-  result = filterByStatus(result, filter.status);
-  result = filterByYear(result, filter.yearFrom, filter.yearTo);
-  return sortMovies(result, filter.sort);
+  let result = filterByGenre(movies, genre);
+  result = filterByStatus(result, status);
+  result = filterByYear(result, yearFrom, yearTo);
+  return sortMovies(result, sort);
 }
 
 export function useMovies() {
   const { movies } = useStorage();
   const filterState = reactive<MovieFilterState>(createDefaultFilterState());
 
-  const filteredMovies = computed(() => pipeMovies(movies.value, filterState));
+  const filteredMovies = computed(() =>
+    pipeMovies(
+      movies.value,
+      filterState.genre,
+      filterState.status,
+      filterState.yearFrom,
+      filterState.yearTo,
+      filterState.sort
+    )
+  );
 
   function findMovie(id: string): Movie | undefined {
     return movies.value.find((m) => m.id === id);
