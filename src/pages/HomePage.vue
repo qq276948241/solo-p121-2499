@@ -5,7 +5,7 @@ import MovieCard from '@/components/MovieCard.vue';
 import { useMovies, type SortKey } from '@/composables/useMovies';
 import { GENRES } from '@/types';
 
-const { filteredMovies, filterGenre, filterStatus, sortKey, yearFrom, yearTo, stats } = useMovies();
+const { filteredMovies, filterState, stats } = useMovies();
 
 const sortOptions: { key: SortKey; label: string }[] = [
   { key: 'newest', label: '最新添加' },
@@ -16,11 +16,11 @@ const sortOptions: { key: SortKey; label: string }[] = [
 ];
 
 function clearYearFilter(): void {
-  yearFrom.value = '';
-  yearTo.value = '';
+  filterState.yearFrom = '';
+  filterState.yearTo = '';
 }
 
-const yearFilterActive = computed(() => yearFrom.value !== '' || yearTo.value !== '');
+const yearFilterActive = computed(() => filterState.yearFrom !== '' || filterState.yearTo !== '');
 </script>
 
 <template>
@@ -52,7 +52,7 @@ const yearFilterActive = computed(() => yearFrom.value !== '' || yearTo.value !=
             <div>
               <label class="block text-xs font-medium text-zinc-500 mb-1.5">类型</label>
               <select
-                v-model="filterGenre"
+                v-model="filterState.genre"
                 class="w-full px-4 py-2.5 bg-zinc-900/60 border border-zinc-700 rounded-xl text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all appearance-none cursor-pointer"
               >
                 <option value="all">全部类型</option>
@@ -70,9 +70,9 @@ const yearFilterActive = computed(() => yearFrom.value !== '' || yearTo.value !=
                     { key: 'wishlist', label: '想看' },
                   ]"
                   :key="opt.key"
-                  @click="filterStatus = opt.key as any"
+                  @click="filterState.status = opt.key as any"
                   class="flex-1 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
-                  :class="filterStatus === opt.key
+                  :class="filterState.status === opt.key
                     ? 'bg-amber-500 text-zinc-900 shadow-lg shadow-amber-500/25'
                     : 'bg-zinc-900/60 text-zinc-400 border border-zinc-700 hover:text-zinc-200 hover:border-zinc-600'"
                 >
@@ -90,7 +90,7 @@ const yearFilterActive = computed(() => yearFrom.value !== '' || yearTo.value !=
               </label>
               <div class="flex items-center gap-1.5">
                 <input
-                  v-model.number="yearFrom"
+                  v-model.number="filterState.yearFrom"
                   type="number"
                   min="1888"
                   max="2100"
@@ -99,7 +99,7 @@ const yearFilterActive = computed(() => yearFrom.value !== '' || yearTo.value !=
                 />
                 <span class="text-zinc-600 text-xs font-bold">—</span>
                 <input
-                  v-model.number="yearTo"
+                  v-model.number="filterState.yearTo"
                   type="number"
                   min="1888"
                   max="2100"
@@ -123,7 +123,7 @@ const yearFilterActive = computed(() => yearFrom.value !== '' || yearTo.value !=
               <label class="block text-xs font-medium text-zinc-500 mb-1.5">排序</label>
               <div class="relative">
                 <select
-                  v-model="sortKey"
+                  v-model="filterState.sort"
                   class="w-full px-4 py-2.5 bg-zinc-900/60 border border-zinc-700 rounded-xl text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all appearance-none cursor-pointer pr-10"
                 >
                   <option v-for="opt in sortOptions" :key="opt.key" :value="opt.key">

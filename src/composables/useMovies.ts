@@ -1,66 +1,92 @@
-import { computed, ref } from 'vue';
+import { computed, reactive } from 'vue';
 import { useStorage } from './useStorage';
 import type { Movie, MovieStatus } from '@/types';
 import { GENRES } from '@/types';
 
 export type SortKey = 'default' | 'rating-desc' | 'rating-asc' | 'year-desc' | 'year-asc' | 'newest';
 
+export interface MovieFilterState {
+  genre: string;
+  status: 'all' | MovieStatus;
+  sort: SortKey;
+  yearFrom: number | '';
+  yearTo: number | '';
+}
+
+function createDefaultFilterState(): MovieFilterState {
+  return {
+    genre: 'all',
+    status: 'all',
+    sort: 'newest',
+    yearFrom: '',
+    yearTo: '',
+  };
+}
+
 function generateId(): string {
   return 'm_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
+function filterByGenre(movies: Movie[], genre: string): Movie[] {
+  if (genre === 'all') return movies;
+  return movies.filter((m) => m.genre === genre);
+}
+
+function filterByStatus(movies: Movie[], status: 'all' | MovieStatus): Movie[] {
+  if (status === 'all') return movies;
+  return movies.filter((m) => m.status === status);
+}
+
+function filterByYear(movies: Movie[], yearFrom: number | '', yearTo: number | ''): Movie[] {
+  let result = movies;
+  if (yearFrom !== '') {
+    const from = Number(yearFrom);
+    result = result.filter((m) => m.year >= from);
+  }
+  if (yearTo !== '') {
+    const to = Number(yearTo);
+    result = result.filter((m) => m.year <= to);
+  }
+  return result;
+}
+
+function sortMovies(movies: Movie[], sortKey: SortKey): Movie[] {
+  const result = [...movies];
+  switch (sortKey) {
+    case 'rating-desc':
+      return result.sort((a, b) => b.rating - a.rating);
+    case 'rating-asc':
+      return result.sort((a, b) => {
+        const ar = a.rating || -1;
+        const br = b.rating || -1;
+        return ar - br;
+      });
+    case 'year-desc':
+      return result.sort((a, b) => b.year - a.year);
+    case 'year-asc':
+      return result.sort((a, b) => a.year - b.year);
+    case 'newest':
+    case 'default':
+    default:
+      return result.sort((a, b) => b.createdAt - a.createdAt);
+  }
+}
+
+function pipeMovies(
+  movies: Movie[],
+  filter: MovieFilterState
+): Movie[] {
+  let result = filterByGenre(movies, filter.genre);
+  result = filterByStatus(result, filter.status);
+  result = filterByYear(result, filter.yearFrom, filter.yearTo);
+  return sortMovies(result, filter.sort);
+}
+
 export function useMovies() {
   const { movies } = useStorage();
+  const filterState = reactive<MovieFilterState>(createDefaultFilterState());
 
-  const filterGenre = ref<string>('all');
-  const filterStatus = ref<'all' | MovieStatus>('all');
-  const sortKey = ref<SortKey>('newest');
-  const yearFrom = ref<number | ''>('');
-  const yearTo = ref<number | ''>('');
-
-  const filteredMovies = computed(() => {
-    let result = [...movies.value];
-
-    if (filterGenre.value !== 'all') {
-      result = result.filter((m) => m.genre === filterGenre.value);
-    }
-
-    if (filterStatus.value !== 'all') {
-      result = result.filter((m) => m.status === filterStatus.value);
-    }
-
-    if (yearFrom.value !== '') {
-      result = result.filter((m) => m.year >= Number(yearFrom.value));
-    }
-
-    if (yearTo.value !== '') {
-      result = result.filter((m) => m.year <= Number(yearTo.value));
-    }
-
-    switch (sortKey.value) {
-      case 'rating-desc':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'rating-asc':
-        result.sort((a, b) => {
-          const ar = a.rating || -1;
-          const br = b.rating || -1;
-          return ar - br;
-        });
-        break;
-      case 'year-desc':
-        result.sort((a, b) => b.year - a.year);
-        break;
-      case 'year-asc':
-        result.sort((a, b) => a.year - b.year);
-        break;
-      case 'newest':
-      default:
-        result.sort((a, b) => b.createdAt - a.createdAt);
-    }
-
-    return result;
-  });
+  const filteredMovies = computed(() => pipeMovies(movies.value, filterState));
 
   function findMovie(id: string): Movie | undefined {
     return movies.value.find((m) => m.id === id);
@@ -146,12 +172,8 @@ export function useMovies() {
 
   return {
     movies,
+    filterState,
     filteredMovies,
-    filterGenre,
-    filterStatus,
-    sortKey,
-    yearFrom,
-    yearTo,
     findMovie,
     addMovie,
     updateMovie,
