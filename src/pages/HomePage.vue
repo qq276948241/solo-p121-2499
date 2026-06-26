@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { SlidersHorizontal, SortAsc, Film, Search } from 'lucide-vue-next';
+import { SlidersHorizontal, SortAsc, Film, Calendar } from 'lucide-vue-next';
 import MovieCard from '@/components/MovieCard.vue';
 import { useMovies, type SortKey } from '@/composables/useMovies';
 import { GENRES } from '@/types';
 
-const { filteredMovies, filterGenre, filterStatus, sortKey, stats } = useMovies();
+const { filteredMovies, filterGenre, filterStatus, sortKey, yearFrom, yearTo, stats } = useMovies();
 
 const sortOptions: { key: SortKey; label: string }[] = [
   { key: 'newest', label: '最新添加' },
@@ -15,10 +15,12 @@ const sortOptions: { key: SortKey; label: string }[] = [
   { key: 'year-asc', label: '年份从旧到新' },
 ];
 
-const searchQuery = computed({
-  get: () => '',
-  set: () => {},
-});
+function clearYearFilter(): void {
+  yearFrom.value = '';
+  yearTo.value = '';
+}
+
+const yearFilterActive = computed(() => yearFrom.value !== '' || yearTo.value !== '');
 </script>
 
 <template>
@@ -46,7 +48,7 @@ const searchQuery = computed({
             <span class="text-sm font-medium text-zinc-300 whitespace-nowrap">筛选</span>
           </div>
 
-          <div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label class="block text-xs font-medium text-zinc-500 mb-1.5">类型</label>
               <select
@@ -75,6 +77,44 @@ const searchQuery = computed({
                     : 'bg-zinc-900/60 text-zinc-400 border border-zinc-700 hover:text-zinc-200 hover:border-zinc-600'"
                 >
                   {{ opt.label }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-zinc-500 mb-1.5">
+                <span class="inline-flex items-center gap-1">
+                  <Calendar class="w-3 h-3" :class="yearFilterActive ? 'text-amber-400' : ''" />
+                  上映年份
+                </span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <input
+                  v-model.number="yearFrom"
+                  type="number"
+                  min="1888"
+                  max="2100"
+                  placeholder="起"
+                  class="flex-1 min-w-0 px-3 py-2.5 bg-zinc-900/60 border border-zinc-700 rounded-xl text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all tabular-nums"
+                />
+                <span class="text-zinc-600 text-xs font-bold">—</span>
+                <input
+                  v-model.number="yearTo"
+                  type="number"
+                  min="1888"
+                  max="2100"
+                  placeholder="止"
+                  class="flex-1 min-w-0 px-3 py-2.5 bg-zinc-900/60 border border-zinc-700 rounded-xl text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all tabular-nums"
+                />
+                <button
+                  v-if="yearFilterActive"
+                  @click="clearYearFilter"
+                  class="p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-700 text-zinc-500 hover:text-amber-400 hover:border-amber-500/50 transition-all flex-shrink-0"
+                  title="清除年份筛选"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>

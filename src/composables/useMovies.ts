@@ -15,6 +15,8 @@ export function useMovies() {
   const filterGenre = ref<string>('all');
   const filterStatus = ref<'all' | MovieStatus>('all');
   const sortKey = ref<SortKey>('newest');
+  const yearFrom = ref<number | ''>('');
+  const yearTo = ref<number | ''>('');
 
   const filteredMovies = computed(() => {
     let result = [...movies.value];
@@ -25,6 +27,14 @@ export function useMovies() {
 
     if (filterStatus.value !== 'all') {
       result = result.filter((m) => m.status === filterStatus.value);
+    }
+
+    if (yearFrom.value !== '') {
+      result = result.filter((m) => m.year >= Number(yearFrom.value));
+    }
+
+    if (yearTo.value !== '') {
+      result = result.filter((m) => m.year <= Number(yearTo.value));
     }
 
     switch (sortKey.value) {
@@ -140,6 +150,8 @@ export function useMovies() {
     filterGenre,
     filterStatus,
     sortKey,
+    yearFrom,
+    yearTo,
     findMovie,
     addMovie,
     updateMovie,
